@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Callable
 
 import numpy as np
 from torch.utils.data import Dataset
@@ -28,7 +28,12 @@ class CSLDailyDataset(Dataset):
     RIGHT_HAND = slice(113, 134)
     BODY = slice(1, 18)
 
-    def __init__(self, root: str | Path, split: str = "train", transform: Optional = None):
+    def __init__(
+        self,
+        root: str | Path,
+        split: str = "train",
+        transform: Optional[Callable] = None,
+    ):
         self.root = Path(root)
         self.split = split
         self.transform = transform
