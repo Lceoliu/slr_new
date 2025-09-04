@@ -8,6 +8,7 @@ from pathlib import Path
 import torch
 import yaml
 from torch.utils.data import DataLoader
+from tqdm.auto import tqdm
 
 # Ensure the repository root (the directory that contains 'signstream') is on sys.path
 _THIS_FILE = Path(__file__).resolve()
@@ -40,6 +41,29 @@ def load_config(path: str) -> dict:
     raise FileNotFoundError(
         f"Config file not found. Tried: {', '.join(str(c) for c in candidates)}"
     )
+
+
+def compute_codebook_usage(
+    model: torch.nn.Module, loader: DataLoader, device: torch.device
+) -> torch.Tensor:
+    """Return codebook usage rate for each level."""
+    model.eval()
+    levels = model.quantizer.levels
+    size = model.quantizer.codebook_size
+    counts = torch.zeros(levels, size, dtype=torch.long)
+    with torch.no_grad():
+        for batch in tqdm(loader, desc="codebook", leave=False):
+            allowed = set(getattr(model, "encoders").keys())
+            inputs = {k: v.to(device) for k, v in batch.items() if k in allowed}
+            _, codes, _ = model(inputs)
+            for stream_codes in codes.values():
+                for lvl, idx in enumerate(stream_codes):
+                    flat = idx.reshape(-1).cpu()
+                    counts[lvl] += torch.bincount(
+                        flat, minlength=size
+                    )
+    usage = (counts > 0).sum(dim=1).float() / size
+    return usage
 
 
 def main(args: argparse.Namespace) -> None:
@@ -106,23 +130,43 @@ def main(args: argparse.Namespace) -> None:
 
     logger = TBLogger(cfg["train"].get("log_dir", "runs/rvq_training"))
 
+    ckpt_dir = Path(args.ckpt_dir)
+    ckpt_dir.mkdir(parents=True, exist_ok=True)
+    best_val = float("inf")
+
     for epoch in range(cfg["train"]["epochs"]):
         train_loss = train_epoch(model, loader, optim, device)
         val_loss = val_epoch(model, val_loader, device)
 
         logger.log_scalar("Loss/train", train_loss, epoch)
         logger.log_scalar("Loss/val", val_loss, epoch)
+
+        if val_loss < best_val:
+            best_val = val_loss
+            torch.save(
+                {"model": model.state_dict(), "epoch": epoch, "optimizer": optim.state_dict()},
+                ckpt_dir / "best.pt",
+            )
+            torch.save(model.quantizer.state_dict(), ckpt_dir / "best_codebook.pt")
+
+        if (epoch + 1) % 5 == 0:
+            torch.save(
+                {"model": model.state_dict(), "epoch": epoch, "optimizer": optim.state_dict()},
+                ckpt_dir / f"epoch_{epoch+1}.pt",
+            )
+
+        if (epoch + 1) % 10 == 0:
+            usage = compute_codebook_usage(model, val_loader, device)
+            for lvl, rate in enumerate(usage):
+                logger.log_scalar(f"CodebookUsage/level_{lvl}", rate.item(), epoch)
+            print(f"codebook usage epoch {epoch+1}: {usage.tolist()}")
+
         logger.flush()
-
         print(f"epoch {epoch}: train_loss={train_loss:.4f}, val_loss={val_loss:.4f}")
-
-    if args.checkpoint:
-        Path(args.checkpoint).parent.mkdir(parents=True, exist_ok=True)
-        torch.save(model.state_dict(), args.checkpoint)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, required=True)
-    parser.add_argument("--checkpoint", type=str, default="")
+    parser.add_argument("--ckpt-dir", type=str, default="checkpoints")
     main(parser.parse_args())

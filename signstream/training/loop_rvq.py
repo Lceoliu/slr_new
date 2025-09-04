@@ -4,6 +4,7 @@ from typing import Dict
 
 import torch
 from torch.utils.data import DataLoader
+from tqdm.auto import tqdm
 
 from .losses import reconstruction_and_quant_loss
 
@@ -16,7 +17,7 @@ def train_epoch(
 ) -> float:
     model.train()
     total = 0.0
-    for batch in loader:
+    for batch in tqdm(loader, desc="train", leave=False):
         # Only pass streams that the model has encoders for
         allowed = set(getattr(model, "encoders").keys())
         inputs: Dict[str, torch.Tensor] = {
@@ -37,7 +38,7 @@ def val_epoch(
     model.eval()
     total = 0.0
     with torch.no_grad():
-        for batch in loader:
+        for batch in tqdm(loader, desc="val", leave=False):
             allowed = set(getattr(model, "encoders").keys())
             inputs: Dict[str, torch.Tensor] = {
                 k: v.to(device) for k, v in batch.items() if k in allowed
