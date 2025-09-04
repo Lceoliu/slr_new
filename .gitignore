@@ -4,3 +4,4 @@ __pycache__/
 *.pyd
 **/__pycache__
 CSL_Daily
+**/checkpoints
