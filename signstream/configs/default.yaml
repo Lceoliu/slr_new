@@ -1,7 +1,7 @@
 # Default configuration for signstream RVQ training
 
 data:
-  root: /workspace/data/public_data/CSL_Daily
+  root: CSL_Daily
   split: train
   fps: 25
   chunk_len: 10
@@ -17,14 +17,17 @@ model:
     levels: 2
     codebook_size: 128
     commitment_beta: 0.25
+    ema_decay: 0.99
+    usage_reg: 0.001 # Added usage regularization
 
 train:
-  epochs: 1
+  epochs: 10 # Increased epochs for a more meaningful run
   batch_size: 2
   lr: 1e-3
   wd: 0.0
-  device: cpu
+  device: cuda # Changed to cuda
   seed: 42
+  log_dir: "runs/rvq_training" # Added log directory for TensorBoard
 
 export:
   enable_rle: true
