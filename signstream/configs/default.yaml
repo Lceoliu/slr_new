@@ -3,10 +3,9 @@
 csl_daily_root: /workspace/data/public_data/CSL_Daily
 
 model:
-  encoder_layer: 2
-  encoder_latent_dim: 256
+  encoder_layers: 2
+  n_heads: 8
   latent_dim: 256
-  type_embed_dim: 16
   rvq:
     levels: 2
     codebook_size: 512

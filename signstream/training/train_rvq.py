@@ -35,7 +35,14 @@ def main() -> None:
     )
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = RVQAutoEncoder(133, cfg["model"]["latent_dim"], cfg["model"]["rvq"]).to(device)
+    m_cfg = cfg["model"]
+    model = RVQAutoEncoder(
+        133,
+        m_cfg["latent_dim"],
+        m_cfg["rvq"],
+        num_layers=m_cfg.get("encoder_layers", 2),
+        n_heads=m_cfg.get("n_heads", 8),
+    ).to(device)
     optimizer = build_optimizer(model.parameters(), lr=train_cfg["lr"], weight_decay=train_cfg.get("wd", 0.0))
     logger = TensorBoardLogger("runs")
 
