@@ -1,0 +1,27 @@
+# Default configuration for SignStream RVQ project
+# Paths
+csl_daily_root: /workspace/data/public_data/CSL_Daily
+
+model:
+  encoder_layer: 2
+  encoder_latent_dim: 256
+  latent_dim: 256
+  type_embed_dim: 16
+  rvq:
+    levels: 2
+    codebook_size: 512
+    ema_decay: 0.99
+    commitment_beta: 0.25
+    usage_reg: 1e-3
+
+train:
+  epochs: 1
+  batch_size: 2
+  lr: 3e-4
+  wd: 0.0
+  amp: false
+  seed: 42
+
+export:
+  enable_rle: true
+  rle_threshold: 0.02
