@@ -1,28 +1,26 @@
+"""Simple run-length encoding utilities."""
 from __future__ import annotations
 
-from typing import Any, List
+from typing import Iterable, List, Tuple, TypeVar
+
+T = TypeVar("T")
 
 
-def run_length_encode(seq: List[Any]) -> List[Any]:
-    """Encode a sequence using simple run-length encoding.
-
-    The first element of a run is kept, and subsequent repetitions are
-    represented as ["NC", count].
-    """
-    if not seq:
+def run_length_encode(seq: Iterable[T]) -> List[Tuple[T, int]]:
+    """Run-length encode a sequence."""
+    iterator = iter(seq)
+    try:
+        prev = next(iterator)
+    except StopIteration:
         return []
-    result: List[Any] = [seq[0]]
-    prev = seq[0]
     count = 1
-    for item in seq[1:]:
+    result: List[Tuple[T, int]] = []
+    for item in iterator:
         if item == prev:
             count += 1
         else:
-            if count > 1:
-                result.append(["NC", count - 1])
-            result.append(item)
+            result.append((prev, count))
             prev = item
             count = 1
-    if count > 1:
-        result.append(["NC", count - 1])
+    result.append((prev, count))
     return result

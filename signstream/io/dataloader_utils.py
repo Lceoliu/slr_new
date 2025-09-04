@@ -1,8 +1,14 @@
+"""DataLoader helper functions."""
 from __future__ import annotations
 
-from torch.utils.data import DataLoader, Dataset
-from typing import Callable, Optional
+import random
+from typing import Any
+
+import numpy as np
+import torch
 
 
-def create_dataloader(dataset: Dataset, batch_size: int, shuffle: bool = True, collate_fn: Optional[Callable] = None) -> DataLoader:
-    return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, collate_fn=collate_fn)
+def worker_init_fn(worker_id: int) -> None:
+    seed = torch.initial_seed() % 2 ** 32
+    np.random.seed(seed + worker_id)
+    random.seed(seed + worker_id)

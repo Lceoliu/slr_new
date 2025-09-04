@@ -1,10 +1,10 @@
+"""Utilities to read dataset README files."""
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Dict
 
 
-def read_dataset_readme(path: str | Path) -> str:
-    """Return contents of dataset README for logging purposes."""
+def read_text(path: str) -> str:
+    """Return the contents of a text file."""
     with open(path, "r", encoding="utf-8") as f:
         return f.read()

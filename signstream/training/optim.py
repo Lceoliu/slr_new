@@ -1,11 +1,11 @@
+"""Optimizer utilities."""
 from __future__ import annotations
 
+from typing import Iterable
+
 import torch
+from torch.optim import AdamW
 
 
-def create_optimizer(
-    model: torch.nn.Module, lr: float | str, wd: float | str = 0.0
-) -> torch.optim.Optimizer:
-    lr_f = float(lr)
-    wd_f = float(wd)
-    return torch.optim.AdamW(model.parameters(), lr=lr_f, weight_decay=wd_f)
+def build_optimizer(params: Iterable[torch.nn.Parameter], lr: float, weight_decay: float = 0.0) -> AdamW:
+    return AdamW(list(params), lr=lr, weight_decay=weight_decay)
